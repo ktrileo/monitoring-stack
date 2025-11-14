@@ -1,0 +1,9 @@
+# .gitignore
+
+# Configuration/Secrets Files
+# These files contain ACTUAL secret values and must be ignored 
+# to prevent accidental commit to GitHub.
+.env
+.secrets.env
+secrets.yml
+secrets/

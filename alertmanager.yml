@@ -1,0 +1,58 @@
+global:
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from:  '__EMAIL_ADDRESS__'
+  smtp_auth_username: '__EMAIL_USERNAME__'
+  smtp_auth_password: '__EMAIL_APIKEY__'
+  smtp_hello: 'alertmanager'
+  smtp_require_tls: true
+  resolve_timeout: 5m
+
+route:
+  receiver: '__RECEIVER_NAME__'
+
+receivers:
+  - name: '__RECEIVER_NAME__'
+    email_configs:
+      - to: '__EMAIL_ADDRESS__'
+        send_resolved: true
+        html: |
+          <html>
+          <head>
+            <style>
+              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; color: #333; margin: 0; padding: 20px; }
+              .container { background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-left: 8px solid {{ if eq .Status "firing" }}#FF6347{{ else }}#3CB371{{ end }}; }
+              .header { font-size: 24px; font-weight: bold; margin-bottom: 10px; color: #1e90ff; }
+              .status-badge { display: inline-block; padding: 6px 12px; border-radius: 4px; font-weight: bold; color: white; margin-top: 10px; }
+              .firing { background-color: #FF4500; }
+              .resolved { background-color: #32CD32; }
+              .details { margin-top: 20px; border-top: 1px dashed #ccc; padding-top: 15px; }
+              .detail-item { margin-bottom: 5px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">Homelab Status Report 🤖</div>
+
+              <div class="status-badge {{ .Status }}">
+                STATUS: {{ if eq .Status "firing" }}🚨 Firing Alert!{{ else }}✅ All Clear!{{ end }}
+              </div>
+
+              <div class="details">
+                <div class="detail-item"><strong>Alert Name:</strong> {{ .CommonLabels.alertname }}</div>
+                <div class="detail-item"><strong>The Culprit:</strong> 💻 {{ .CommonLabels.instance }} (Job: {{ .CommonLabels.job }})</div>
+                <div class="detail-item"><strong>Severity Level:</strong> {{ .CommonLabels.severity | toUpper }}</div>
+
+                <hr>
+
+                <p><strong>The Story:</strong></p>
+                <p>— **What Happened:** {{ .CommonAnnotations.summary }}</p>
+                <p>— **The Gist:** {{ .CommonAnnotations.description }}</p>
+
+                <p style="margin-top: 20px; font-size: 12px; color: #888;">
+                  This message brought to you by Prometheus and Alertmanager.
+                  Please fix the thing or silence the noise! 🔊
+                </p>
+              </div>
+            </div>
+          </body>
+          </html>

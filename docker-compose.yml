@@ -1,0 +1,57 @@
+volumes:
+  prometheus_data:
+    driver: local
+  alertmanager_data:
+    driver: local
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.7.3
+    container_name: prometheus
+    networks:
+      - prometheus_default
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=10d'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    container_name: alertmanager
+    volumes:
+      - ./alertmanager.yml.template:/etc/alertmanager/alertmanager.yml.template:ro
+      - ./entrypoint.sh:/entrypoint.sh:ro
+      - alertmanager_data:/alertmanager
+    secrets:
+      - email_address
+      - email_username
+      - email_apikey
+      - receiver_name
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    networks:
+      - prometheus_default
+    ports:
+      - "9093:9093"
+    restart: unless-stopped
+
+secrets:
+  email_address:
+    file: ./secrets/email_address.txt
+  email_username:
+    file: ./secrets/email_username.txt
+  email_apikey:
+    file: ./secrets/email_apikey.txt
+  receiver_name:
+    file: ./secrets/receiver_name.txt
+
+networks:
+  prometheus_default:
+    driver: bridge

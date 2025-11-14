@@ -1,0 +1,11 @@
+groups:
+  - name: HostHighUtilizationAlerts
+    rules:
+      - alert: HighCPULoad
+        expr: 100 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100 > 80
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance {{ $labels.instance }} CPU is utilized > 30%"
+          description: "The CPU utilization on host {{ $labels.instance }} has exceeded 80% for more than 5 minutes."
