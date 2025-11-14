@@ -1,27 +1,33 @@
+name: observability
+
 volumes:
-  prometheus_data:
-    driver: local
-  alertmanager_data:
-    driver: local
+  prometheus-data:
+  alertmanager-data:
 
 services:
   prometheus:
     image: prom/prometheus:v3.7.3
     container_name: prometheus
     networks:
-      - prometheus_default
+      - observability
     ports:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./rules:/etc/prometheus/rules:ro
-      - prometheus_data:/prometheus
+      - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=10d'
       - '--web.enable-lifecycle'
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   alertmanager:
     image: prom/alertmanager:v0.28.1
@@ -29,7 +35,7 @@ services:
     volumes:
       - ./alertmanager.yml.template:/etc/alertmanager/alertmanager.yml.template:ro
       - ./entrypoint.sh:/entrypoint.sh:ro
-      - alertmanager_data:/alertmanager
+      - alertmanager-data:/alertmanager
     secrets:
       - email_address
       - email_username
@@ -37,10 +43,15 @@ services:
       - receiver_name
     entrypoint: ["/bin/sh", "/entrypoint.sh"]
     networks:
-      - prometheus_default
+      - observability
     ports:
       - "9093:9093"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 secrets:
   email_address:
@@ -53,5 +64,8 @@ secrets:
     file: ./secrets/receiver_name.txt
 
 networks:
-  prometheus_default:
+  observability:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.0.0/16
