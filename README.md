@@ -1,5 +1,5 @@
 # Monitoring Stack config files & docker-compose
 - Prometheus
 - Alert Manager
-- Grafana (tbd)
+- Grafana
 - ELK (tbd)
